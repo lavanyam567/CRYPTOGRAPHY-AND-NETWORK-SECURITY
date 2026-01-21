@@ -1,0 +1,51 @@
+/* ECB, CBC, CFB MODES WITH 1-BIT + ZERO PADDING
+   Algorithm: AES-128
+   Library: OpenSSL
+*/
+
+#include <stdio.h>
+#include <string.h>
+#include <openssl/aes.h>
+#include <openssl/rand.h>
+
+#define BLOCK_SIZE 16
+
+/* 1-bit followed by zero padding (0x80 00 00 ...) */
+void pad_1bit_zero(unsigned char *data, int *len) {
+    int pad_len = BLOCK_SIZE - (*len % BLOCK_SIZE);
+    data[*len] = 0x80;
+    for (int i = 1; i < pad_len; i++)
+        data[*len + i] = 0x00;
+    *len += pad_len;
+}
+
+void print_hex(const char *label, unsigned char *data, int len) {
+    printf("%s: ", label);
+    for (int i = 0; i < len; i++)
+        printf("%02X ", data[i]);
+    printf("\n");
+}
+
+int main() {
+    unsigned char key[BLOCK_SIZE];
+    unsigned char iv[BLOCK_SIZE];
+    unsigned char plaintext[64] = "CRYPTOGRAPHYMODEDEMO";  // exact block
+    unsigned char ciphertext[64];
+
+    int len = strlen((char *)plaintext);
+
+    RAND_bytes(key, BLOCK_SIZE);
+    RAND_bytes(iv, BLOCK_SIZE);
+
+    pad_1bit_zero(plaintext, &len);
+
+    AES_KEY enc_key;
+    AES_set_encrypt_key(key, 128, &enc_key);
+
+    /* ECB */
+    for (int i = 0; i < len; i += BLOCK_SIZE)
+        AES_encrypt(plaintext + i, ciphertext + i, &enc_key);
+    print_hex("ECB Ciphertext", ciphertext, len);
+
+    /* CBC */
+    unsigned char iv_cb_
