@@ -1,0 +1,72 @@
+# ECB, CBC, and CFB MODE ENCRYPTION
+# Algorithm used: AES (128-bit block size)
+# Padding scheme: 1 bit followed by 0 bits (implemented as 0x80 + 0x00...)
+
+from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+from cryptography.hazmat.backends import default_backend
+import os
+
+BLOCK_SIZE = 16  # AES block size in bytes
+
+
+# ---------- 1-BIT + ZERO PADDING ----------
+def pad_1bit_zero(data):
+    pad_len = BLOCK_SIZE - (len(data) % BLOCK_SIZE)
+    return data + b'\x80' + b'\x00' * (pad_len - 1)
+
+
+# ---------- ECB MODE ----------
+def encrypt_ecb(key, plaintext):
+    plaintext = pad_1bit_zero(plaintext)
+    cipher = Cipher(algorithms.AES(key), modes.ECB(), backend=default_backend())
+    encryptor = cipher.encryptor()
+    return encryptor.update(plaintext) + encryptor.finalize()
+
+
+# ---------- CBC MODE ----------
+def encrypt_cbc(key, plaintext):
+    iv = os.urandom(BLOCK_SIZE)
+    plaintext = pad_1bit_zero(plaintext)
+    cipher = Cipher(algorithms.AES(key), modes.CBC(iv), backend=default_backend())
+    encryptor = cipher.encryptor()
+    return iv, encryptor.update(plaintext) + encryptor.finalize()
+
+
+# ---------- CFB MODE ----------
+def encrypt_cfb(key, plaintext):
+    iv = os.urandom(BLOCK_SIZE)
+    plaintext = pad_1bit_zero(plaintext)
+    cipher = Cipher(algorithms.AES(key), modes.CFB(iv), backend=default_backend())
+    encryptor = cipher.encryptor()
+    return iv, encryptor.update(plaintext) + encryptor.finalize()
+
+
+# ---------- TEST DATA ----------
+key = os.urandom(16)  # AES-128 key
+plaintext = b"NETWORKSECURITY123"  # exactly 16 bytes (one full block)
+
+print("Plaintext:", plaintext)
+
+print("\nECB Ciphertext:")
+print(encrypt_ecb(key, plaintext))
+
+print("\nCBC Ciphertext:")
+iv_cbc, cbc_ct = encrypt_cbc(key, plaintext)
+print("IV:", iv_cbc)
+print("Ciphertext:", cbc_ct)
+
+print("\nCFB Ciphertext:")
+iv_cfb, cfb_ct = encrypt_cfb(key, plaintext)
+print("IV:", iv_cfb)
+print("Ciphertext:", cfb_ct)
+
+
+# ---------- THEORY ANSWER ----------
+print("\nWhy pad even when plaintext is already complete?")
+print("""
+• Prevents information leakage about message length
+• Ensures uniform ciphertext structure
+• Avoids ambiguity during decryption
+• Protects against padding oracle and traffic analysis attacks
+• Enforces consistent protocol behavior
+""")
