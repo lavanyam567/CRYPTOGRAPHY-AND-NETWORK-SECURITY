@@ -1,0 +1,54 @@
+# CBC MODE ENCRYPTION DEMO
+# Algorithms: 3DES (stronger than DES) and AES (modern baseline)
+# Shows which is better for security vs performance
+
+from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import padding
+import os
+
+# ---------- COMMON UTIL ----------
+def cbc_encrypt(algorithm, key, plaintext):
+    iv = os.urandom(algorithm.block_size // 8)
+
+    padder = padding.PKCS7(algorithm.block_size).padder()
+    padded_data = padder.update(plaintext) + padder.finalize()
+
+    cipher = Cipher(algorithm(key), modes.CBC(iv), backend=default_backend())
+    encryptor = cipher.encryptor()
+
+    ciphertext = encryptor.update(padded_data) + encryptor.finalize()
+    return iv, ciphertext
+
+
+# ---------- PLAINTEXT ----------
+plaintext = b"Cryptography and Network Security - CBC Mode Demo"
+
+
+# ---------- 3DES CBC ----------
+key_3des = os.urandom(24)  # 3DES key size = 168 bits (24 bytes)
+iv_3des, cipher_3des = cbc_encrypt(algorithms.TripleDES, key_3des, plaintext)
+
+print("3DES CBC Encryption")
+print("IV:", iv_3des)
+print("Ciphertext:", cipher_3des)
+print()
+
+
+# ---------- AES CBC ----------
+key_aes = os.urandom(32)  # AES-256
+iv_aes, cipher_aes = cbc_encrypt(algorithms.AES, key_aes, plaintext)
+
+print("AES CBC Encryption")
+print("IV:", iv_aes)
+print("Ciphertext:", cipher_aes)
+print()
+
+
+# ---------- DECISION ----------
+# a) FOR SECURITY  → AES (stronger, modern, larger block size, no known practical attacks)
+# b) FOR PERFORMANCE → AES (hardware acceleration, faster than 3DES)
+
+print("Decision:")
+print("Security Choice   : AES-CBC")
+print("Performance Choice: AES-CBC")
