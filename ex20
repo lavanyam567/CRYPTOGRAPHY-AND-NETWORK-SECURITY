@@ -1,0 +1,49 @@
+/* ECB vs CBC ERROR PROPAGATION DEMO
+   Algorithm: AES-128
+   Focus: How errors affect plaintext and ciphertext blocks
+*/
+
+#include <stdio.h>
+#include <string.h>
+
+#define BLOCK_SIZE 16
+
+void print_block(const char *label, unsigned char *b) {
+    int i;
+    printf("%s: ", label);
+    for (i = 0; i < BLOCK_SIZE; i++)
+        printf("%02X ", b[i]);
+    printf("\n");
+}
+
+int main() {
+    /* Sample plaintext blocks */
+    unsigned char P1[BLOCK_SIZE] = "PLAINTEXTBLOCK1";
+    unsigned char P2[BLOCK_SIZE] = "PLAINTEXTBLOCK2";
+
+    /* Simulated ciphertext blocks */
+    unsigned char C1[BLOCK_SIZE] = "CIPHERTEXTBLK1";
+    unsigned char C2[BLOCK_SIZE] = "CIPHERTEXTBLK2";
+
+    printf("Original Blocks\n");
+    print_block("P1", P1);
+    print_block("P2", P2);
+
+    /* Simulate a transmission error in C1 */
+    C1[0] ^= 0x01;   // flip 1 bit
+
+    printf("\nAfter Bit Error in C1\n");
+    print_block("Corrupted C1", C1);
+
+    /*
+      ECB MODE EFFECT:
+      - Only P1 is corrupted
+      - P2 remains intact
+    */
+
+    printf("\nECB Mode Result:\n");
+    printf("Only P1 is affected. P2 is safe.\n");
+
+    /*
+      CBC MODE EFFECT:
+      - C1 decrypts
